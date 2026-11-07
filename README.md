@@ -15,6 +15,8 @@ Steps 3, 4 and 5 are written for the root of your ROM workspace, the folder that
 $(call inherit-product-if-exists, vendor/xiaomi/onyx-leicacamera/onyx-leicacamera-vendor.mk)
 ```
 3. Cherry-pick the device-tree commit that repairs the MiSyS watermark file modes at boot - without it the camera provider cannot read `/data/vendor/camera` and the Leica watermark and filter drop from the photo
+
+For non-China variants (`ro.boot.hwc` other than `CN`), the MiSyS service also rewrites the legacy `Turbo 4 Pro` model text in cached Leica MIVI templates under `/data/vendor/camera/watermarks/leica` to `F7` at service start and when new templates are written. China variants keep `Turbo 4 Pro`. This is separate from the app's region-aware watermark branding because those MIVI templates are persistent device data.
 <pre>
 git -C device/xiaomi/onyx fetch https://github.com/Onyx-Odyssey/android_device_xiaomi_onyx <a href="https://github.com/Onyx-Odyssey/android_device_xiaomi_onyx/commit/8167cf100102d2acac2587ec3d87c59a2a409093">8167cf100102d2acac2587ec3d87c59a2a409093</a>
 git -C device/xiaomi/onyx cherry-pick FETCH_HEAD

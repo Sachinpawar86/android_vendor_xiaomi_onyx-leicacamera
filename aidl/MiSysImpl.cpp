@@ -1,4 +1,5 @@
 #include "MiSysImpl.h"
+#include "LeicaWatermarkModel.h"
 #include <android-base/logging.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -30,12 +31,22 @@ ScopedAStatus MiSysImpl::MiSysCreateFolderMode(const std::string& path, const st
 
 ScopedAStatus MiSysImpl::MiSysWriteBuffer(const std::string& path, const std::string& file, const std::vector<uint8_t>& buf, int64_t len) {
     std::string fullPath = path + "/" + file;
+    std::string normalized;
+    const void* data = buf.data();
+    int64_t writeLen = len;
+    if (len >= 0 && static_cast<uint64_t>(len) <= buf.size()) {
+        normalized.assign(reinterpret_cast<const char*>(buf.data()), static_cast<size_t>(len));
+        if (leica_watermark::NormalizeTemplate(fullPath, &normalized) > 0) {
+            data = normalized.data();
+            writeLen = static_cast<int64_t>(normalized.size());
+        }
+    }
     int fd = open(fullPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0664);
     if (fd >= 0) {
         // open() ignores the mode once the file exists, so re-downloading a filter table
         // over a 0600 leftover would keep cameraserver from reading it.
         fchmod(fd, 0664);
-        write(fd, buf.data(), len);
+        write(fd, data, writeLen);
         close(fd);
     }
     return ScopedAStatus::ok();
@@ -61,12 +72,26 @@ ScopedAStatus MiSysImpl::WriteToFile(const Ashmem& block, const std::string& pat
     int dstFd = open(fullPath.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0664);
     if (srcFd >= 0 && dstFd >= 0) {
         fchmod(dstFd, 0664);
-        char buffer[8192];
-        int64_t remaining = size;
-        ssize_t bytesRead;
-        while (remaining > 0 && (bytesRead = read(srcFd, buffer, std::min<int64_t>(sizeof(buffer), remaining))) > 0) {
-            write(dstFd, buffer, bytesRead);
-            remaining -= bytesRead;
+        if (size > 0 && size <= 1024 * 1024 && leica_watermark::IsLeicaTemplatePath(fullPath)) {
+            std::string data;
+            data.resize(static_cast<size_t>(size));
+            size_t offset = 0;
+            while (offset < data.size()) {
+                ssize_t count = read(srcFd, data.data() + offset, data.size() - offset);
+                if (count <= 0) break;
+                offset += static_cast<size_t>(count);
+            }
+            data.resize(offset);
+            leica_watermark::NormalizeTemplate(fullPath, &data);
+            leica_watermark::WriteAll(dstFd, data.data(), data.size());
+        } else {
+            char buffer[8192];
+            int64_t remaining = size;
+            ssize_t bytesRead;
+            while (remaining > 0 && (bytesRead = read(srcFd, buffer, std::min<int64_t>(sizeof(buffer), remaining))) > 0) {
+                write(dstFd, buffer, bytesRead);
+                remaining -= bytesRead;
+            }
         }
         close(dstFd);
     }

@@ -3,6 +3,7 @@
 #include <android/binder_process.h>
 #include <sys/stat.h>
 #include "MiSysImpl.h"
+#include "LeicaWatermarkModel.h"
 #include "HypSysIntl.h"
 
 using aidl::vendor::xiaomi::hardware::misys::common::MiSysImpl;
@@ -15,6 +16,12 @@ int main() {
     // not read the materialised watermark templates and the watermark would be
     // silently dropped from the saved JPEG.
     umask(0022);
+
+    const int watermarkTemplates = leica_watermark::RewriteExistingTemplates();
+    if (watermarkTemplates > 0) {
+        LOG(INFO) << "misys: updated " << watermarkTemplates
+                  << " Leica watermark templates for the non-China region";
+    }
 
     ABinderProcess_setThreadPoolMaxThreadCount(4);
     ABinderProcess_startThreadPool();
