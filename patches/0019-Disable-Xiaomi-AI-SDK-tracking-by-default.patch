@@ -1,0 +1,31 @@
+From 8350f8f401240e8f21641234e84729fecc7d22bc Mon Sep 17 00:00:00 2001
+From: Sachin <sachinbarange86@gmail.com>
+Date: Sat, 7 Nov 2026 04:47:51 +0000
+Subject: [PATCH 19/19] Disable Xiaomi AI SDK tracking by default
+
+FUDataCenter seeds the shared AI SDK config map with track.enable = true, and
+the speech and mimoji channels read that value through Jd/b.g() to decide
+whether to open a tracking session. Seed the false register instead, which is
+also what every reader already falls back to when the key is absent.
+
+Signed-off-by: Sachin <sachinbarange86@gmail.com>
+---
+ smali_classes6/Pd/c.smali | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/smali_classes6/Pd/c.smali b/smali_classes6/Pd/c.smali
+index 1380435d..8b3d04eb 100644
+--- a/smali_classes6/Pd/c.smali
++++ b/smali_classes6/Pd/c.smali
+@@ -539,7 +539,7 @@
+ 
+     const-string v6, "track.enable"
+ 
+-    invoke-virtual {v3, v6, v8}, LJd/b;->l(Ljava/lang/String;Z)V
++    invoke-virtual {v3, v6, v4}, LJd/b;->l(Ljava/lang/String;Z)V
+ 
+     const-string v6, "track.max_track_data_size"
+ 
+-- 
+2.43.0
+

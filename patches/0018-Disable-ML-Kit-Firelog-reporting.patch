@@ -1,0 +1,75 @@
+From 87b030103086f20a8c6dea6d551ddcb5e98e681b Mon Sep 17 00:00:00 2001
+From: Sachin <sachinbarange86@gmail.com>
+Date: Sat, 7 Nov 2026 04:47:51 +0000
+Subject: [PATCH 18/19] Disable ML Kit Firelog reporting
+
+The three Firelog option builders hardcode enableFirelog to true and discard
+the boolean their setter is handed, so every ML Kit init reports regardless of
+what the caller asks for. Store false in the builder, then restore the register
+to 1 before the required-property bitmask is set so the builder still validates
+and detection itself is unchanged.
+
+Signed-off-by: Sachin <sachinbarange86@gmail.com>
+---
+ .../com/google/android/gms/internal/mlkit_common/zzrs.smali   | 4 +++-
+ .../android/gms/internal/mlkit_vision_barcode/zzwb.smali      | 4 +++-
+ .../android/gms/internal/mlkit_vision_common/zzly.smali       | 4 +++-
+ 3 files changed, 9 insertions(+), 3 deletions(-)
+
+diff --git a/smali_classes2/com/google/android/gms/internal/mlkit_common/zzrs.smali b/smali_classes2/com/google/android/gms/internal/mlkit_common/zzrs.smali
+index cde1bc0c..1e43ef12 100644
+--- a/smali_classes2/com/google/android/gms/internal/mlkit_common/zzrs.smali
++++ b/smali_classes2/com/google/android/gms/internal/mlkit_common/zzrs.smali
+@@ -26,10 +26,12 @@
+ .method public final zza(Z)Lcom/google/android/gms/internal/mlkit_common/zzsa;
+     .locals 1
+ 
+-    const/4 p1, 0x1
++    const/4 p1, 0x0
+ 
+     iput-boolean p1, p0, Lcom/google/android/gms/internal/mlkit_common/zzrs;->zzb:Z
+ 
++    const/4 p1, 0x1
++
+     iget-byte v0, p0, Lcom/google/android/gms/internal/mlkit_common/zzrs;->zzd:B
+ 
+     or-int/2addr p1, v0
+diff --git a/smali_classes2/com/google/android/gms/internal/mlkit_vision_barcode/zzwb.smali b/smali_classes2/com/google/android/gms/internal/mlkit_vision_barcode/zzwb.smali
+index 72a1cb6f..1b3625ea 100644
+--- a/smali_classes2/com/google/android/gms/internal/mlkit_vision_barcode/zzwb.smali
++++ b/smali_classes2/com/google/android/gms/internal/mlkit_vision_barcode/zzwb.smali
+@@ -26,10 +26,12 @@
+ .method public final zza(Z)Lcom/google/android/gms/internal/mlkit_vision_barcode/zzwg;
+     .locals 1
+ 
+-    const/4 p1, 0x1
++    const/4 p1, 0x0
+ 
+     iput-boolean p1, p0, Lcom/google/android/gms/internal/mlkit_vision_barcode/zzwb;->zzb:Z
+ 
++    const/4 p1, 0x1
++
+     iget-byte v0, p0, Lcom/google/android/gms/internal/mlkit_vision_barcode/zzwb;->zzd:B
+ 
+     or-int/2addr p1, v0
+diff --git a/smali_classes2/com/google/android/gms/internal/mlkit_vision_common/zzly.smali b/smali_classes2/com/google/android/gms/internal/mlkit_vision_common/zzly.smali
+index a7ccf3ac..aee2df4e 100644
+--- a/smali_classes2/com/google/android/gms/internal/mlkit_vision_common/zzly.smali
++++ b/smali_classes2/com/google/android/gms/internal/mlkit_vision_common/zzly.smali
+@@ -26,10 +26,12 @@
+ .method public final zza(Z)Lcom/google/android/gms/internal/mlkit_vision_common/zzmd;
+     .locals 1
+ 
+-    const/4 p1, 0x1
++    const/4 p1, 0x0
+ 
+     iput-boolean p1, p0, Lcom/google/android/gms/internal/mlkit_vision_common/zzly;->zzb:Z
+ 
++    const/4 p1, 0x1
++
+     iget-byte v0, p0, Lcom/google/android/gms/internal/mlkit_vision_common/zzly;->zzd:B
+ 
+     or-int/2addr p1, v0
+-- 
+2.43.0
+
