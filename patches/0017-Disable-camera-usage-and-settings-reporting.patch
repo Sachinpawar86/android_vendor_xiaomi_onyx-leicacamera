@@ -1,0 +1,136 @@
+From c33445f1051d9f209bead0de90cfe90da8e58e30 Mon Sep 17 00:00:00 2001
+From: Sachin <sachinbarange86@gmail.com>
+Date: Sat, 7 Nov 2026 04:27:41 +0000
+Subject: [PATCH] Disable camera usage and settings reporting
+
+SettingUploadJobService armed a persisted job (id 17495010) that required
+network and re-armed itself from its own worker, so settings left the device
+long after the camera was closed. The service is now disabled in the manifest
+and its scheduler entry point only cancels a job left over from an earlier
+build.
+
+MiStatsWrapper.initTrack gated OneTrack creation on camera.camera_statistic,
+which defaulted to true. The gate is now hard-false, so no OneTrack instance
+is created; TrackWrapper already returns early while Ib/c.a is false, which
+keeps every event off the network.
+---
+ AndroidManifest.xml                           |  2 +-
+ .../statistic/SettingUploadJobService.smali   | 71 -------------------
+ smali_classes4/Ib/a.smali                     |  6 +-
+ 3 files changed, 2 insertions(+), 77 deletions(-)
+
+diff --git a/AndroidManifest.xml b/AndroidManifest.xml
+index 1c3947ea..5c80980a 100644
+--- a/AndroidManifest.xml
++++ b/AndroidManifest.xml
+@@ -122,7 +122,7 @@
+         <meta-data android:name="miui.supportFlipFullScreen" android:value="0"/>
+         <meta-data android:name="miui.screenOrientation" android:value="1.sensor,2.portrait,3.fullSensor,4.sensorPortrait"/>
+         <meta-data android:name="miui.isIgnoreOrientationRequest" android:value="true"/>
+-        <service android:name="com.android.camera.statistic.SettingUploadJobService" android:permission="android.permission.BIND_JOB_SERVICE"/>
++        <service android:enabled="false" android:name="com.android.camera.statistic.SettingUploadJobService" android:permission="android.permission.BIND_JOB_SERVICE"/>
+         <receiver android:exported="true" android:name="com.android.camera.CameraButtonIntentReceiver">
+             <intent-filter>
+                 <action android:name="android.intent.action.CAMERA_BUTTON"/>
+diff --git a/smali_classes2/com/android/camera/statistic/SettingUploadJobService.smali b/smali_classes2/com/android/camera/statistic/SettingUploadJobService.smali
+index 18466c6e..d7193a5c 100644
+--- a/smali_classes2/com/android/camera/statistic/SettingUploadJobService.smali
++++ b/smali_classes2/com/android/camera/statistic/SettingUploadJobService.smali
+@@ -45,77 +45,6 @@
+ 
+     invoke-virtual {v0, v3}, Landroid/app/job/JobScheduler;->cancel(I)V
+ 
+-    new-instance v4, Landroid/content/ComponentName;
+-
+-    const-class v5, Lcom/android/camera/statistic/SettingUploadJobService;
+-
+-    invoke-direct {v4, p0, v5}, Landroid/content/ComponentName;-><init>(Landroid/content/Context;Ljava/lang/Class;)V
+-
+-    sget-wide v5, Lu6/b;->Z:J
+-
+-    const-wide/16 v7, 0x0
+-
+-    cmp-long p0, v5, v7
+-
+-    if-lez p0, :cond_1
+-
+-    const-wide/16 v7, 0x3e8
+-
+-    mul-long/2addr v5, v7
+-
+-    goto :goto_0
+-
+-    :cond_1
+-    const-wide/32 v5, 0x5265c00
+-
+-    :goto_0
+-    const-string/jumbo p0, "scheduleSettingUploadJob: minimumLatency = "
+-
+-    invoke-static {v5, v6, p0}, LB/T;->e(JLjava/lang/String;)Ljava/lang/String;
+-
+-    move-result-object p0
+-
+-    new-array v7, v1, [Ljava/lang/Object;
+-
+-    invoke-static {v2, p0, v7}, Lcom/android/camera/log/Log;->d(Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;)V
+-
+-    new-instance p0, Landroid/app/job/JobInfo$Builder;
+-
+-    invoke-direct {p0, v3, v4}, Landroid/app/job/JobInfo$Builder;-><init>(ILandroid/content/ComponentName;)V
+-
+-    const/4 v3, 0x2
+-
+-    invoke-virtual {p0, v3}, Landroid/app/job/JobInfo$Builder;->setRequiredNetworkType(I)Landroid/app/job/JobInfo$Builder;
+-
+-    move-result-object p0
+-
+-    invoke-virtual {p0, v5, v6}, Landroid/app/job/JobInfo$Builder;->setMinimumLatency(J)Landroid/app/job/JobInfo$Builder;
+-
+-    move-result-object p0
+-
+-    const/4 v3, 0x1
+-
+-    invoke-virtual {p0, v3}, Landroid/app/job/JobInfo$Builder;->setPersisted(Z)Landroid/app/job/JobInfo$Builder;
+-
+-    move-result-object p0
+-
+-    invoke-virtual {p0}, Landroid/app/job/JobInfo$Builder;->build()Landroid/app/job/JobInfo;
+-
+-    move-result-object p0
+-
+-    invoke-virtual {v0, p0}, Landroid/app/job/JobScheduler;->schedule(Landroid/app/job/JobInfo;)I
+-
+-    move-result p0
+-
+-    if-gtz p0, :cond_2
+-
+-    const-string/jumbo p0, "scheduleJob failed: job id is 17495010"
+-
+-    new-array v0, v1, [Ljava/lang/Object;
+-
+-    invoke-static {v2, p0, v0}, Lcom/android/camera/log/Log;->w(Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Object;)V
+-
+-    :cond_2
+     return-void
+ .end method
+ 
+diff --git a/smali_classes4/Ib/a.smali b/smali_classes4/Ib/a.smali
+index 44d9a53b..f04b92c1 100644
+--- a/smali_classes4/Ib/a.smali
++++ b/smali_classes4/Ib/a.smali
+@@ -126,11 +126,7 @@
+ 
+     sput-boolean v10, LIb/c;->b:Z
+ 
+-    const-string v10, "camera.camera_statistic"
+-
+-    invoke-static {v10, v4}, LZb/f;->c(Ljava/lang/String;Z)Z
+-
+-    move-result v10
++    const/4 v10, 0x0
+ 
+     if-eqz v10, :cond_2
+ 
+-- 
+2.43.0
+

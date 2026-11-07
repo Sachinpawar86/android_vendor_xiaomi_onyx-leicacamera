@@ -36,7 +36,7 @@ Or from inside the clone:
 ```sh
 git lfs pull
 ```
-Check it before building, it must print `137627716`:
+Check it before building, it must print `137742404`:
 ```sh
 wc -c < vendor/xiaomi/onyx-leicacamera/proprietary/system/priv-app/MiuiCamera/MiuiCamera.apk
 ```
